@@ -1,0 +1,6 @@
+✅ Extracted 4 rows and 4 columns from 'data\input\sample_data.csv'
+ id    name  age        city
+  1   Alice   30    New York
+  2     Bob  NaN Los Angeles
+  3 Charlie   25     Chicago
+  4   Alice   30    New York
