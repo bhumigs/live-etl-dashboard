@@ -3,4 +3,4 @@ pandas
 plotly
 kaleido
 streamlit-autorefresh
-
+reportlab
