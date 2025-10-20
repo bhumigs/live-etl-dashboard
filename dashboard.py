@@ -74,7 +74,9 @@ date_cols = df.select_dtypes(include=["object", "datetime"]).columns.tolist()
 date_column = None
 for col in date_cols:
     try:
-        df[col] = pd.to_datetime(df[col])
+        df[col] = pd.to_datetime(
+            df[col], errors='coerce', infer_datetime_format=True)
+
         date_column = col
         break
     except Exception:
