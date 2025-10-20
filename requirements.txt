@@ -1,6 +1,6 @@
-streamlit
-pandas
-plotly
-kaleido
-streamlit-autorefresh
-reportlab
+streamlit==1.50.0
+pandas==2.3.3
+plotly==6.3.1
+kaleido==1.1.0
+streamlit-autorefresh==1.0.1
+reportlab==4.4.4
