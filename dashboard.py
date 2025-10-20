@@ -52,7 +52,6 @@ if uploaded_file:
 elif api_url:
     with st.spinner("⚡ Running ETL on API data..."):
         try:
-            # Make sure extract_data handles URLs
             raw_df = extract_data(api_url)
             df = transform_data(raw_df)
             load_data(df, target_path=DATA_FILE)
@@ -68,7 +67,7 @@ else:
         st.stop()
 
 # ----------------------------
-# Detect date column
+# Detect and clean date column
 # ----------------------------
 date_cols = df.select_dtypes(include=["object", "datetime"]).columns.tolist()
 date_column = None
@@ -76,9 +75,9 @@ for col in date_cols:
     try:
         df[col] = pd.to_datetime(
             df[col], errors='coerce', infer_datetime_format=True)
-
-        date_column = col
-        break
+        if df[col].notna().any():
+            date_column = col
+            break
     except Exception:
         continue
 
@@ -101,35 +100,42 @@ numeric_cols = df.select_dtypes(include="number").columns.tolist()
 selected_numeric = {}
 for col in numeric_cols:
     min_val, max_val = float(df[col].min()), float(df[col].max())
-    selected_numeric[col] = st.sidebar.slider(
-        f"{col} range", min_val, max_val, (min_val, max_val)
-    )
+    if min_val == max_val:
+        # Only one unique value, no slider needed
+        st.sidebar.write(f"{col}: {min_val}")
+        selected_numeric[col] = min_val
+    else:
+        selected_numeric[col] = st.sidebar.slider(
+            f"{col} range", min_val, max_val, (min_val, max_val)
+        )
 
 # Apply filters
 filtered_df = df.copy()
 for col, vals in selected_category.items():
     filtered_df = filtered_df[filtered_df[col].isin(vals)]
 for col, val_range in selected_numeric.items():
-    filtered_df = filtered_df[(filtered_df[col] >= val_range[0]) & (
-        filtered_df[col] <= val_range[1])]
+    if isinstance(val_range, tuple):
+        filtered_df = filtered_df[(filtered_df[col] >= val_range[0]) & (
+            filtered_df[col] <= val_range[1])]
 
 # Date range filter
-# Date range filter
 if date_column:
-    # Drop missing datetime values
     filtered_dates = filtered_df[date_column].dropna()
     if not filtered_dates.empty:
         start_date, end_date = filtered_dates.min(), filtered_dates.max()
-        selected_range = st.sidebar.slider(
-            "Select Date Range",
-            min_value=start_date,
-            max_value=end_date,
-            value=(start_date, end_date)
-        )
-        filtered_df = filtered_df[
-            (filtered_df[date_column] >= selected_range[0]) &
-            (filtered_df[date_column] <= selected_range[1])
-        ]
+        if start_date == end_date:
+            st.sidebar.write(f"{date_column}: {start_date.date()}")
+        else:
+            selected_range = st.sidebar.slider(
+                "Select Date Range",
+                min_value=start_date,
+                max_value=end_date,
+                value=(start_date, end_date)
+            )
+            filtered_df = filtered_df[
+                (filtered_df[date_column] >= selected_range[0]) &
+                (filtered_df[date_column] <= selected_range[1])
+            ]
     else:
         st.warning("Date column exists but has no valid dates.")
 
@@ -237,3 +243,4 @@ if st.button("Generate PDF Report", key="pdf_report"):
             )
     except Exception as e:
         st.error(f"❌ Error generating PDF: {e}")
+        
